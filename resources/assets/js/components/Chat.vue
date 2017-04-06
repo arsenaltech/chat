@@ -3,7 +3,7 @@
     <div class="row">
       <div class="col-md-4">
         <div class="list-group">
-          <template v-for="user in users">
+          <template v-for="user in onlineExceptMe">
           <a href="#"
              :class="{'list-group-item': true, 'active': (to.id == user.id)}"
              @click="selectTo(user)"
@@ -59,7 +59,21 @@
 
   export default {
     mounted() {
-      this.getUsers();
+      //this.getUsers();
+      Echo.join('chat-room-presence' )
+        .here((members) => {
+
+          this.onlineUsers = members;
+          this.to = this.onlineExceptMe[0];
+
+      })
+        .joining((joiningMember) => {
+          this.onlineUsers.push(joiningMember);
+
+      })
+        .leaving((leavingMember) => {
+          this.onlineUsers = this.onlineUsers.filter((user) => (user.id != leavingMember.id))
+        });
       Echo.private('App.User.' + Laravel.user.id)
         .listen("NewMessage", (e) => {
           this.messages.push(e);
@@ -70,6 +84,7 @@
     data() {
       return {
         users: [],
+        onlineUsers: [],
         message: '',
         messages: [],
         to: null
@@ -84,19 +99,18 @@
       },
       loggedInUser() {
         return Laravel.user;
+      },
+      onlineExceptMe() {
+        return this.onlineUsers.filter((user)=> (user.id != this.loggedInUser.id))
       }
+
     },
     methods: {
 
       selectTo(user) {
         this.to = user;
       },
-      getUsers() {
-        axios.get('/users').then((response) => {
-          this.users = response.data.filter((user) => (user.id != Laravel.user.id));
-          this.to = this.users[0];
-        });
-      },
+
       sendMessage() {
         this.messages.push({
           from: Laravel.user,

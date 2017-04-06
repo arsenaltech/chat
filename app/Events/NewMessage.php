@@ -17,11 +17,11 @@ class NewMessage implements ShouldBroadcast
     public $to;
     public $message;
 
-    public function __construct($from, $to, $message)
+    public function __construct($message)
     {
-        $this->from = $from;
-        $this->to = $to;
-        $this->message = $message;
+        $this->from = $message->from;
+        $this->to = $message->to;
+        $this->message = $message->message;
     }
 
     /**

@@ -39,6 +39,16 @@ Route::post('/chat', function() {
     event(new NewMessage($message));
 });
 
+Route::get('/messages', function() {
+    $from = Auth::user()->id;
+    $to = Request::get('to');
+    return Message::with(['from', 'to'])->where(function($query) use($from, $to) {
+        $query->whereFromId($from)->whereToId($to);
+    })->orWhere(function($query) use($from, $to) {
+        $query->whereToId($from)->whereFromId($to);
+    })->get();
+});
+
 Route::get('/users', function() {
     return User::all();
 });

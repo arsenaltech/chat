@@ -76,7 +76,7 @@
         });
       Echo.private('App.User.' + Laravel.user.id)
         .listen("NewMessage", (e) => {
-          this.messages.push(e);
+          this.addNewMessage(e);
         });
 
 
@@ -86,16 +86,16 @@
         users: [],
         onlineUsers: [],
         message: '',
-        messages: [],
+        messages: {},
         to: null
       }
     },
     computed: {
       currentUserMessages() {
-        return this.messages.filter((message) => (
-          message.from.id == this.to.id ||
-          (message.from.id == Laravel.user.id && message.to.id == this.to.id)
-        ));
+        if(this.to == null || this.messages[this.to.id] === undefined) {
+          return [];
+        }
+        return this.messages[this.to.id];
       },
       loggedInUser() {
         return Laravel.user;
@@ -105,14 +105,34 @@
       }
 
     },
+    watch: {
+      to(newTo) {
+        if(this.messages[newTo.id] === undefined) {
+          this.loadHistory(newTo.id);
+          this.$set(this.messages, newTo.id, []);
+        }
+      }
+    },
     methods: {
-
+      loadHistory(with_id) {
+        axios.get('/messages?to='+with_id)
+          .then((response)=> {
+            this.$set(this.messages, with_id, response.data.concat(this.messages[with_id]));
+          });
+      },
       selectTo(user) {
         this.to = user;
       },
 
+      addNewMessage(message) {
+        if(this.messages[this.to.id] === undefined) {
+          this.$set(this.messages, this.to.id, []);
+        }
+        this.messages[this.to.id].push(message);
+      },
+
       sendMessage() {
-        this.messages.push({
+        this.addNewMessage({
           from: Laravel.user,
           to: this.to,
           message: this.message

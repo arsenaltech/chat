@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\NewMessage;
+use App\User;
 
 Route::get('/', function () {
     $data = [
@@ -27,11 +28,16 @@ Route::get('/', function () {
 });
 Route::post('/chat', function() {
     $from = Auth::user();
-    //$to = Request::get('to');
-    $to = \App\User::find(2);
+    $to = User::find(Request::get('to'));
+    //$to = \App\User::find(2);
     $message = Request::get('message');
     event(new NewMessage($from, $to, $message));
 });
+
+Route::get('/users', function() {
+    return User::all();
+});
+
 Auth::routes();
 
 Route::get('/home', 'HomeController@index');
